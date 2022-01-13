@@ -1,0 +1,29 @@
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.current-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.current-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.current-details {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.week-container {
+    display: flex;
+    justify-content: space-between;
+}
