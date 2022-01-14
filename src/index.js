@@ -14,14 +14,12 @@ const windSpeed = document.querySelector('.wind-speed')
 const weekContainer = document.querySelector('.week-container')
 
 const key = 'b869ab386745e03cf8ad4414c45af90f'
-let city
+const defaultCity = 'Los Angeles'
 
 // best place to put the following? utility.js module?
 let u = 'imperial' // for a toggle between units, used in the API request urls
-let speed = 'mph' // set to 'mph' or 'k/ph' depending on u value
-let cF = 'F' // set to C or F depending on u value
 
-// UI.js
+// view.js
 const updateUI = async (data) => {
     const { cData, wData } = data
     console.log(cData)
@@ -33,13 +31,13 @@ const updateUI = async (data) => {
     currentIcon.src = `http://openweathermap.org/img/wn/${wData.current.weather[0].icon}.png` 
     
     // better to declare or do inline?
-    const tmp = Math.round(wData.current.temp)
-    temp.innerHTML = `<h1>${tmp}º ${cF}</h1>`
+    const roundedTemp = Math.round(wData.current.temp)
+    temp.innerHTML = `<h1>${roundedTemp}º ${u === 'imperial' ? 'F' : 'C'}</h1>` // use ternary and change c/f inline
 
     location.innerHTML = `<h3>${cData.name}, ${cData.sys.country}</h3>`
     
-    // need to convert date, .dt is unix(?)
-    const dat = new Date(cData.dt)
+    const dat = new Date(cData.dt * 1000)
+
     date.innerHTML = `<p>${dat.toDateString()}</p>`
     time.innerHTML = `<p>${dat.toLocaleTimeString()}</p>`
 
@@ -47,15 +45,19 @@ const updateUI = async (data) => {
     units.innerHTML = ``
         
     const flk = Math.round(wData.current.feels_like)
-    feelsTemp.innerHTML = `${flk}º ${cF}`
+    feelsTemp.innerHTML = `${flk}º ${u === 'imperial' ? 'F' : 'C'}`
 
     humidityPercent.innerHTML = `${wData.current.humidity}%`
     precipPercent.innerHTML = `${wData.daily[0].pop * 100}%`
-    windSpeed.innerHTML = `${wData.current.wind_speed} ${speed}`
+    
+    const roundWind = Math.round(wData.current.wind_speed)
+    windSpeed.innerHTML = `${roundWind} ${u === 'imperial' ? 'mph' : 'k/ph'}`
 
-    // separate fuction for the forLoop on the forecast container, or ok to do in here?
     const daily = wData.daily
     console.log(daily)
+    
+    weekContainer.innerHTML = ''
+    
     for (let i = 1; i < daily.length; i++) {
         const dayContainer = document.createElement('div')
         dayContainer.classList.add('day-container')
@@ -84,12 +86,13 @@ const updateUI = async (data) => {
 
 }
 
-// where does this go?
+// where does this go? view 
 const getCityName = () => {
-    city = document.querySelector('.search-box').value;
+    const city = document.querySelector('.search-box').value;
+    return city
 }
 
-// API.js?
+// API.js
 const getCoordinates = async (city) => {
     const baseUrl = 'https://api.openweathermap.org/data/2.5/weather'
     const query = `?q=${city}&appid=${key}&units=${u}`
@@ -106,17 +109,25 @@ const getWeather = async (lat, lon) => {
     return wData
 }
 
-const updateCity = async (city) => {
+const fetchCityData = async (city) => {
     const cData = await getCoordinates(city)
     const wData = await getWeather(cData.coord.lat, cData.coord.lon)
     return { cData, wData }
 }
 
-// UI.js? something else?
-const form = document.querySelector('.search-form')
-form.addEventListener('submit', (e) => {
-    e.preventDefault()
-    getCityName()
-    updateCity(city)
-        .then(data => updateUI(data))
-})
+export { fetchCityData }
+
+// index.js
+const init = async () => {
+    const data = await fetchCityData(defaultCity)
+    updateUI(data)
+    
+    const form = document.querySelector('.search-form')
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault()
+        const city = getCityName()
+        const data = await fetchCityData(city)
+        updateUI(data)
+    })
+}
+init()
